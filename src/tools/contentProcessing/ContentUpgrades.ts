@@ -53,11 +53,31 @@ export class ContentUpgrades {
    */
   static async upgradeI3dmGltf1ToGltf2(
     inputBuffer: Buffer,
-    options: any
+    options: any,
+    externalGlbResolver: (uri: string) => Promise<Buffer | undefined>,
+    externalGlbResourceResolver: (uri: string) => string | undefined,
+    externalStoreGlbResolver: (buff: Buffer, uri: string) => void
   ): Promise<Buffer> {
     const inputTileData = TileFormats.readTileData(inputBuffer);
-    const inputGlb = inputTileData.payload;
+    let inputGlb = inputTileData.payload;
+    if (options) {
+      options.resourceDirectory = undefined;
+    }
+    if (inputTileData.header.gltfFormat === 0) {
+      const glbUri = inputTileData.payload.toString().replace(/\0/g, "");
+      const glbBuf = await externalGlbResolver(glbUri);
+      inputGlb = glbBuf ? glbBuf : inputGlb;
+
+      options = options || {};
+      options.resourceDirectory = externalGlbResourceResolver(glbUri);
+    }
     const outputGlb = await GltfUtilities.upgradeGlb(inputGlb, options);
+    if (inputTileData.header.gltfFormat === 0) {
+      const glbUri = inputTileData.payload.toString().replace(/\0/g, "");
+      externalStoreGlbResolver(outputGlb, glbUri);
+      // 抛出异常，不再处理i3dm
+      throw new Error('内嵌glb，不再处理i3dm');
+    }
     const outputTileData = TileFormats.createI3dmTileDataFromGlb(
       outputGlb,
       inputTileData.featureTable.json,

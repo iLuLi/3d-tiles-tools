@@ -27,6 +27,9 @@ export class TilesetSource3dtiles implements TilesetSource {
   constructor() {
     this.db = undefined;
   }
+  getFullKey(key: string): string {
+    return key;
+  }
 
   /** {@inheritDoc TilesetSource.open} */
   open(fullInputName: string): void {

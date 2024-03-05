@@ -37,7 +37,7 @@ export abstract class TilesetProcessor {
    * @returns The `TilesetProcessorContext`
    * @throws DeveloperError If `begin` was not called yet
    */
-  protected getContext(): TilesetProcessorContext {
+  getContext(): TilesetProcessorContext {
     if (!this.context) {
       throw new DeveloperError(
         "The processor was not initialized. Call 'begin' first."
@@ -178,6 +178,15 @@ export abstract class TilesetProcessor {
     this.markAsProcessed(sourceEntry.key);
     if (targetEntry) {
       this.putTargetKey(sourceEntry.key, targetEntry.key);
+      this.markAsProcessed(targetEntry.key);
+      this.storeTargetEntries(targetEntry);
+    }
+  }
+
+  markAndStoreTarget(key: string, targetEntry: TilesetEntry | undefined) {
+    this.markAsProcessed(key);
+    if (targetEntry) {
+      this.putTargetKey(key, targetEntry.key);
       this.markAsProcessed(targetEntry.key);
       this.storeTargetEntries(targetEntry);
     }

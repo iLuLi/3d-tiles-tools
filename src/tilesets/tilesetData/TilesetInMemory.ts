@@ -39,6 +39,9 @@ export class TilesetInMemory implements TilesetSource, TilesetTarget {
     this.targetIsOpen = false;
     this.overwrite = false;
   }
+  getFullKey(key: string): string {
+    return key;
+  }
 
   /** {@inheritDoc TilesetSource.open} */
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

@@ -237,7 +237,10 @@ export class TilesetCombiner {
       // original spec data), so handle this case explicitly here.
       throw new TilesetError("Content does not have a URI");
     }
-    const externalFileName = Paths.join(currentDirectory, contentUri);
+    let externalFileName = Paths.join(currentDirectory, contentUri);
+    if (currentDirectory !== "." && contentUri.indexOf(currentDirectory) === 0) {
+      externalFileName = contentUri;
+    }
     const externalFileBuffer = this.tilesetSource.getValue(externalFileName);
     if (!externalFileBuffer) {
       throw new TilesetError(`No data found for ${externalFileName}`);

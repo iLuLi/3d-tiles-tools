@@ -63,6 +63,14 @@ export class TilesetSourceFs implements TilesetSource {
     return data;
   }
 
+  getFullKey(key: string) {
+    if (!this.fullInputName) {
+      throw new TilesetError("Source is not opened. Call 'open' first.");
+    }
+    const fullFileName = path.join(this.fullInputName, key);
+    return fullFileName;
+  }
+
   /** {@inheritDoc TilesetSource.close} */
   close() {
     if (!this.fullInputName) {

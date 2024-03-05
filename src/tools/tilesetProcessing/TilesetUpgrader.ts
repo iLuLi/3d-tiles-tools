@@ -1,4 +1,5 @@
 import { Paths } from "../../base";
+import path from 'path';
 import { DeveloperError } from "../../base";
 
 import { ContentDataTypes } from "../../base";
@@ -325,9 +326,16 @@ export class TilesetUpgrader {
       targetValue = await TileFormatsMigration.convertB3dmToGlb(sourceValue);
     } else if (this.upgradeOptions.upgradeB3dmGltf1ToGltf2) {
       logger.debug(`  Upgrading GLB in ${sourceKey}`);
+      const gltfUpgradeOptions = this.gltfUpgradeOptions || {};
+      let resourceDirectory = sourceKey;
+      if (this.tilesetProcessor) {
+        const tilesetSource = this.tilesetProcessor.getContext().tilesetSource;
+        resourceDirectory = path.dirname(tilesetSource.getFullKey(sourceKey));
+        gltfUpgradeOptions.resourceDirectory = resourceDirectory;
+      }
       targetValue = await ContentUpgrades.upgradeB3dmGltf1ToGltf2(
         sourceValue,
-        this.gltfUpgradeOptions
+        gltfUpgradeOptions
       );
     } else {
       logger.debug(`  Not upgrading ${sourceKey} (disabled via option)`);
@@ -380,9 +388,48 @@ export class TilesetUpgrader {
       );
     } else if (this.upgradeOptions.upgradeI3dmGltf1ToGltf2) {
       logger.debug(`  Upgrading GLB in ${sourceKey}`);
+      const externalGlbResolver = async (
+        uri: string
+      ): Promise<Buffer | undefined> => {
+        if (!this.tilesetProcessor) {
+          return undefined;
+        }
+        uri = Paths.join(path.dirname(sourceKey), uri);
+        const externalGlbEntry = await this.tilesetProcessor.fetchSourceEntry(
+          uri
+        );
+        if (!externalGlbEntry) {
+          return undefined;
+        }
+        return externalGlbEntry.value;
+      };
+      const externalGlbResourceResolver = (
+        uri: string
+      ): string | undefined => {
+        if (!this.tilesetProcessor) {
+          return undefined;
+        }
+        const tilesetSource = this.tilesetProcessor.getContext().tilesetSource;
+        uri = Paths.join(path.dirname(sourceKey), uri);
+        return path.dirname(tilesetSource.getFullKey(uri));
+      };
+      const externalStoreGlbResolver = (buff: Buffer, uri: string) => {
+        if (!this.tilesetProcessor) {
+          return undefined;
+        }
+        const key = Paths.join(path.dirname(sourceKey), uri);
+        if (this.tilesetProcessor.isProcessed(key)) return;
+        this.tilesetProcessor.markAndStoreTarget(key, {
+          key: key,
+          value: buff
+        });
+      }
       targetValue = await ContentUpgrades.upgradeI3dmGltf1ToGltf2(
         sourceValue,
-        this.gltfUpgradeOptions
+        this.gltfUpgradeOptions,
+        externalGlbResolver,
+        externalGlbResourceResolver,
+        externalStoreGlbResolver
       );
     } else {
       logger.debug(`  Not upgrading ${sourceKey} (disabled via option)`);

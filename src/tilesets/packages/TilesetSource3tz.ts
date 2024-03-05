@@ -37,6 +37,9 @@ export class TilesetSource3tz implements TilesetSource {
     this.fd = undefined;
     this.zipIndex = undefined;
   }
+  getFullKey(key: string): string {
+    return key;
+  }
 
   getZipIndex(): IndexEntry[] | undefined {
     return this.zipIndex;

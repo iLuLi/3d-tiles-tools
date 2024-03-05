@@ -157,7 +157,7 @@ export class TileDataLayouts {
         length: payloadLength,
         end: payloadEnd,
       },
-      legacyBatchLength: batchLength,
+      legacyBatchLength: batchLength || 0,
     };
   }
 }
