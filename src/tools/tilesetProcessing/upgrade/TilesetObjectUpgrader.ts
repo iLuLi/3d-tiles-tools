@@ -8,6 +8,7 @@ import { Extensions } from "../../../tilesets";
 import { TilesetUpgradeOptions } from "./TilesetUpgradeOptions";
 
 import { Loggers } from "../../../base";
+import { BoundingVolumes } from "../BoundingVolumes";
 const logger = Loggers.get("upgrade");
 
 /**
@@ -61,6 +62,8 @@ export class TilesetObjectUpgrader {
       logger.debug(`Upgrading extension declarations`);
       Extensions.removeExtensionUsed(tileset, "3DTILES_content_gltf");
     }
+    // TODO 临时修改region -> box
+    await this.upgradeEachContentRegionToBox(tileset);
   }
 
   /**
@@ -100,6 +103,26 @@ export class TilesetObjectUpgrader {
         for (const content of tile.contents) {
           this.upgradeContentUrlToUri(content);
         }
+      }
+      return true;
+    });
+  }
+
+  private async upgradeEachContentRegionToBox(tileset: Tileset) {
+    const root = tileset.root;
+    await Tiles.traverseExplicit(root, async (tilePath: Tile[]) => {
+      const tile = tilePath[tilePath.length - 1];
+      if (tile.boundingVolume && tile.boundingVolume.region) {
+        tile.boundingVolume.box = BoundingVolumes.computeBoundingVolumeBoxFromBoundingVolume(
+          tile.boundingVolume
+        )
+        delete tile.boundingVolume['region'];
+      }
+      if (tile.content && tile.content.boundingVolume && tile.content.boundingVolume.region) {
+        tile.content.boundingVolume.box = BoundingVolumes.computeBoundingVolumeBoxFromBoundingVolume(
+          tile.boundingVolume
+        )
+        delete tile.content.boundingVolume['region'];
       }
       return true;
     });
