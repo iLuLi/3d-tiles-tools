@@ -1,13 +1,9 @@
-// const ToolsMain = require("./src/cli/ToolsMain.js");
 import {ToolsMain} from './src/cli/ToolsMain.js';
 import fs from 'fs';
 import path from 'path'
-import iconv from 'iconv-lite'
 import { customAlphabet } from 'nanoid';
 
 const nanoid = customAlphabet('1234567890abcdef');
-
-// await ToolsMain.combine('C:/Users/liuhn-a/Desktop/工具/test', 'C:/Users/liuhn-a/Desktop/工具/test/result', true);
 
 
 function withBOM(buff) {
