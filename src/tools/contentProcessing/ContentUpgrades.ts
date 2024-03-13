@@ -29,7 +29,14 @@ export class ContentUpgrades {
   ): Promise<Buffer> {
     const inputTileData = TileFormats.readTileData(inputBuffer);
     const inputGlb = inputTileData.payload;
-    const outputGlb = await GltfUtilities.upgradeGlb(inputGlb, options);
+    let outputGlb = await GltfUtilities.upgradeGlb(inputGlb, options);
+    const setRTCCenterResolver = (rtcTranslation: number[] | undefined) => {
+      if (rtcTranslation && inputTileData.featureTable.json) {
+        inputTileData.featureTable.json['RTC_CENTER'] = rtcTranslation;
+      }
+    }
+    outputGlb = await GltfUtilities.removeCesiumRtcExtension(outputGlb, setRTCCenterResolver);
+    outputGlb = await GltfUtilities.checkGltf2BatchIDBufferView(outputGlb);
     const outputTileData = TileFormats.createB3dmTileDataFromGlb(
       outputGlb,
       inputTileData.featureTable.json,
@@ -40,6 +47,7 @@ export class ContentUpgrades {
     const outputBuffer = TileFormats.createTileDataBuffer(outputTileData);
     return outputBuffer;
   }
+
 
   /**
    * For the given I3DM data buffer, extract the GLB, upgrade it
@@ -71,7 +79,8 @@ export class ContentUpgrades {
       options = options || {};
       options.resourceDirectory = externalGlbResourceResolver(glbUri);
     }
-    const outputGlb = await GltfUtilities.upgradeGlb(inputGlb, options);
+    let outputGlb = await GltfUtilities.upgradeGlb(inputGlb, options);
+    outputGlb = await GltfUtilities.checkGltf2BatchIDBufferView(outputGlb);
     if (inputTileData.header.gltfFormat === 0) {
       const glbUri = inputTileData.payload.toString().replace(/\0/g, "");
       externalStoreGlbResolver(outputGlb, glbUri);

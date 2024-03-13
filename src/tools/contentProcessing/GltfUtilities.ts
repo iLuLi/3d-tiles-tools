@@ -320,4 +320,112 @@ export class GltfUtilities {
     Extensions.removeExtensionUsed(gltf, "CESIUM_RTC");
     Extensions.removeExtension(gltf, "CESIUM_RTC");
   }
+
+  static async removeCesiumRtcExtension(glbBuffer: Buffer, setRTCCenterResolver: (rtcExtension: number[] | undefined) => void): Promise<Buffer> {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const customStage = (gltf: any, options: any) => {
+      const rtcTranslation = GltfUtilities.removeCesiumRtcExtensionInternal(gltf);
+      setRTCCenterResolver(rtcTranslation);
+      return gltf;
+    };
+    const options = {
+      customStages: [customStage],
+      keepUnusedElements: true,
+    };
+    const result = await GltfPipeline.processGlb(glbBuffer, options);
+    return result.glb;
+  }
+
+  static async checkGltf2BatchIDBufferView(glbBuffer: Buffer): Promise<Buffer> {
+    const customStage = (gltf: any) => {
+      if (gltf.extensions && gltf.extensions['HCity']) {
+          // 检查byteStride = 2
+          const bfvs = gltf.bufferViews.filter(bfv => {
+              return bfv.byteStride === 2;
+          });
+          const buffers = gltf.buffers;
+          if (!buffers) return gltf;
+          // 修改byteStride = 4，并且修改对应buffer
+          bfvs.forEach(bfv => {
+              bfv.byteStride = 4;
+              try {
+                  let buffer = buffers[bfv.buffer].extras._pipeline.source;
+                  // 找到所有之后的bfv，需要同步修改
+                  const afterBfvs = gltf.bufferViews.filter(item => {
+                      return item.byteOffset > bfv.byteOffset;
+                  });
+                  const breforBuffer = buffer.slice(0, bfv.byteOffset);
+                  const afterBuffer = buffer.slice(bfv.byteOffset + bfv.byteLength);
+  
+                  const buf = buffer.slice(bfv.byteOffset, bfv.byteOffset + bfv.byteLength);
+                  // let batchIds = Uint16Array.from(buffer.slice(bfv.byteOffset, bfv.byteOffset + bfv.byteLength));
+                  let batchIds: any = new Uint16Array(
+                      buf.buffer,
+                      buf.byteOffset,
+                      buf.length / Uint16Array.BYTES_PER_ELEMENT);
+                  batchIds = Uint32Array.from(batchIds);
+                  const batchBuffer = Buffer.from(batchIds.buffer);
+                  const batchBUfferLength = batchBuffer.length;
+                  const offset = batchBUfferLength - bfv.byteLength;
+                  buffer = Buffer.concat([breforBuffer, batchBuffer, afterBuffer]);
+                  buffers[bfv.buffer].extras._pipeline.source = buffer;
+                  bfv.byteLength = batchBUfferLength;
+  
+                  afterBfvs.forEach(bfv => {
+                      bfv.byteOffset += offset;
+                  });
+              } catch(err) {
+                  console.log(err);
+              }
+          });
+  
+          let extensionsUsed = gltf.extensionsUsed;
+          if (!extensionsUsed) {
+              gltf.extensionsUsed = [];
+              extensionsUsed = gltf.extensionsUsed;
+          }
+          if (extensionsUsed.indexOf('HCity') === -1) {
+              extensionsUsed.push('HCity');
+          }
+      }
+      return gltf;
+    };
+    const options = {
+        customStages: [customStage],
+        keepUnusedElements: true,
+    };
+    const result = await GltfPipeline.processGlb(glbBuffer, options);
+    return result.glb;
+  }
+  /**
+   * Remove the `CESIUM_RTC` extension in the given glTF object.
+   *
+   * This will insert a new parent node above each root node of
+   * a scene. These new parent nodes will have a `translation`
+   * that is directly taken from the `CESIUM_RTC` `center`.
+   *
+   * The `CESIUM_RTC` extension object and its used/required
+   * usage declarations will be removed.
+   *
+   * @param gltf - The glTF object
+   */
+  private static removeCesiumRtcExtensionInternal(gltf: any): number[] | undefined {
+    if (!gltf.extensions) {
+      return;
+    }
+    const rtcExtension = gltf.extensions["CESIUM_RTC"];
+    if (!rtcExtension) {
+      return;
+    }
+    // Compute the translation, taking the y-up-vs-z-up transform into account
+    const rtcTranslation = [
+      rtcExtension.center[0],
+      rtcExtension.center[1],
+      rtcExtension.center[2],
+    ];
+    
+    Extensions.removeExtensionUsed(gltf, "CESIUM_RTC");
+    Extensions.removeExtension(gltf, "CESIUM_RTC");
+    return rtcTranslation;
+  }
 }
