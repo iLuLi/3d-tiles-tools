@@ -238,7 +238,7 @@ export class TilesetCombiner {
       throw new TilesetError("Content does not have a URI");
     }
     let externalFileName = Paths.join(currentDirectory, contentUri);
-    if (currentDirectory !== "." && contentUri.indexOf(currentDirectory) === 0) {
+    if (currentDirectory !== "." && contentUri.indexOf(currentDirectory.split('/')[0]) === 0) {
       externalFileName = contentUri;
     }
     const externalFileBuffer = this.tilesetSource.getValue(externalFileName);
