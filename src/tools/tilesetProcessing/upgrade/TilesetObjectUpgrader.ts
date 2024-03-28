@@ -179,6 +179,9 @@ export class TilesetObjectUpgrader {
    */
   private async upgradeRefineValues(tileset: Tileset) {
     const root = tileset.root;
+    if (!root.refine) {
+      root.refine = 'REPLACE';
+    }
     await Tiles.traverseExplicit(root, async (tilePath: Tile[]) => {
       const tile = tilePath[tilePath.length - 1];
       if (tile.refine && tile.refine !== "ADD" && tile.refine !== "REPLACE") {

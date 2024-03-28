@@ -1,9 +1,14 @@
+// const ToolsMain = require("./src/cli/ToolsMain.js");
 import {ToolsMain} from './src/cli/ToolsMain.js';
 import fs from 'fs';
 import path from 'path'
+import iconv from 'iconv-lite'
 import { customAlphabet } from 'nanoid';
 
 const nanoid = customAlphabet('1234567890abcdef');
+
+// await ToolsMain.combine('C:/Users/liuhn-a/Desktop/工具/test', 'C:/Users/liuhn-a/Desktop/工具/test/result', true);
+// ToolsMain.b3dmToGlb('D:/tilesetTest/道路/hc6a40e/hcead1d/38/100/1_38_25_0_ver6103ae2c.b3dm', './test.glb', true);
 
 
 function withBOM(buff) {
@@ -92,7 +97,7 @@ function changeDirName(list, rootPath) {
     }
 }
 
-const rootPath = path.normalize('D:\\tilesetTest\\实景第三段');
+const rootPath = path.normalize('D:\\tilesetTest\\立交案例\\管线');
 const targetRootPath = path.normalize('E:\\server\\HCity\\数据服务\\HCityData\\projs\\zqps0531\\mds');
 const resultName = path.basename(rootPath);
 
@@ -103,16 +108,24 @@ let targetPath = path.resolve(targetRootPath, resultName);
 removeJsonUTF8BOM(rootPath);
 
 let list = getTilesetPath(rootPath)
+// 排序
+list = list.sort((a, b) => {
+    return b.split('\\').length - a.split('\\').length;
+});
 console.log(list);
 if (list.length > 1) {
     changeDirName(list, rootPath);
     list = getTilesetPath(rootPath)
     // 合并
-    ToolsMain.merge(list, targetPath, true);
+    await ToolsMain.merge(list, targetPath, true);
     srcPath = targetPath;
 }
 // 升级
-ToolsMain.upgrade(srcPath, targetPath, true, '1.0');
+await ToolsMain.upgrade(srcPath, targetPath, true, '1.0', {
+    baseColorTextureNames: ['tex', 'tex1', 'u_tex'],
+    baseColorFactorNames: ['diffuse', 'u_diffuse']
+});
 
 // 合并外部json
-// ToolsMain.combine(mergeTargetPath, path.resolve(targetRootPath, '合并外部json'), true);
+console.log('合并外部json', targetPath);
+await ToolsMain.combine(targetPath, path.resolve(targetRootPath, resultName + "_合并"), true);
