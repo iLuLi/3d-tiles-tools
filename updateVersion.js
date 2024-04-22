@@ -1056,6 +1056,11 @@ function srgbToLinear(srgb) {
   return linear;
 }
 
+function maxNum(arr) {
+  arr = arr.sort((a, b) => b - a);
+  return arr[0];
+}
+
 function convertTechniquesToPbr(gltf, options) {
   options = defaultValue(options, defaultValue.EMPTY_OBJECT);
   const baseColorTextureNames = defaultValue(
@@ -1073,6 +1078,7 @@ function convertTechniquesToPbr(gltf, options) {
     let ambient;
     let specular;
     let shininess = 0;
+    let diffuse;
     ForEach.materialValue(material, function (value, name) {
       if (baseColorTextureNames.indexOf(name) !== -1 && isTexture(value)) {
         hasTex = true;
@@ -1082,30 +1088,58 @@ function convertTechniquesToPbr(gltf, options) {
         specular = value;
       } else if (name.indexOf('shininess') > -1) {
         shininess = value;
+      } else if (name.indexOf('diffuse') > -1) {
+        diffuse = value;
       }
     });
-    let roughnessFactor = 1.0;
-    let metallicFactor =  shininess / 256;
-    if (specular) {
-      roughnessFactor = 1 - specular[0];
+    // 计算粗糙度和金属度
+    let roughnessFactor = 1;
+    let metallicFactor = 0;
+    if (!material.pbrMetallicRoughness) {
+      if (!specular) {
+        specular = [0, 0, 0, 1];
+      }
+      if (!diffuse) {
+        diffuse = [1, 1, 1, 1];
+      }
+      let specularIntensity = specular[0] * 0.2125 + specular[1] * 0.7154 + specular[2] * 0.0721;
+      let diffuseBrightness = 0.299 * Math.pow(diffuse[0], 2) + 0.587 * Math.pow(diffuse[1], 2) + 0.114 * Math.pow(diffuse[2], 2);
+      let specularBrightness = 0.299 * Math.pow(specular[0], 2) + 0.587 * Math.pow(specular[1], 2) + 0.114 * Math.pow(specular[2], 2);
+      let specularStrength = maxNum(specular.slice(0, 3));
+      let shininessExponent = shininess;
+
+      roughnessFactor = Math.pow(2 / (shininessExponent * specularIntensity + 2), 0.5);
+      let dielectricSpecularReflectance = 0.04
+      let oneMinusSpecularStrength = 1 - specularStrength
+
+      let A = dielectricSpecularReflectance
+      let B = (diffuseBrightness * (oneMinusSpecularStrength / (1 - A)) + specularBrightness) - 2 * A
+      let C = A - specularBrightness
+      let squareRoot = Math.pow(maxNum([0.0, B * B - 4 * A * C]), 0.5)
+      let value = (-B + squareRoot) / (2 * A) / 8
+      metallicFactor = value > 1 ? 1 : (value < 0 ? 0 : value);
+
+      // let metallicFactor =  shininess / 256;
+      // if (specular) {
+      //   roughnessFactor = 1 - specular[0];
+      // }
+      roughnessFactor = 1 - shininess / 255;
+      metallicFactor = 0;
+    } else {
+      roughnessFactor = material.pbrMetallicRoughness.roughnessFactor;
+      metallicFactor = material.pbrMetallicRoughness.metallicFactor;
     }
+    
+
     ForEach.materialValue(material, function (value, name) {
       if (baseColorTextureNames.indexOf(name) !== -1 && isTexture(value)) {
         initializePbrMaterial(material);
         material.pbrMetallicRoughness.baseColorTexture = value;
       } else if (baseColorFactorNames.indexOf(name) !== -1 && isVec4(value)) {
         initializePbrMaterial(material);
-        // value[0] *= 1.5;
-        // value[1] *= 1.5;
-        // value[2] *= 1.5;
-        // if (ambient) {
-        //   value[0] += ambient[0];
-        //   value[1] += ambient[0];
-        //   value[2] += ambient[0];
-        // }
         material.pbrMetallicRoughness.baseColorFactor = srgbToLinear(value);
         if (hasTex) {
-          material.pbrMetallicRoughness.baseColorFactor = [1, 1, 1, 1];
+          material.pbrMetallicRoughness.baseColorFactor = [1, 1, 1, value[3]];
         }
       }
     });
