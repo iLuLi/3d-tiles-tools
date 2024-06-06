@@ -33,6 +33,7 @@ export * from "./tilesetData/TilesetError";
 export * from "./tilesetData/TilesetInMemory";
 export * from "./tilesetData/TilesetSource";
 export * from "./tilesetData/TilesetSourceFs";
+export * from "./tilesetData/TilesetSourceHttp";
 export * from "./tilesetData/TilesetSources";
 export * from "./tilesetData/TilesetTarget";
 export * from "./tilesetData/TilesetTargetFs";

@@ -37,6 +37,7 @@ export class TilesetSource3tz implements TilesetSource {
     this.fd = undefined;
     this.zipIndex = undefined;
   }
+  
   getFullKey(key: string): string {
     return key;
   }
@@ -95,6 +96,10 @@ export class TilesetSource3tz implements TilesetSource {
       return inflatedData;
     }
     return entry.data;
+  }
+
+  getAsyncValue(key: string): Promise<Buffer | undefined> {
+    throw new Error("Method not implemented.");
   }
 
   /** {@inheritDoc TilesetSource.close} */

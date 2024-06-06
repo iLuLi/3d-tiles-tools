@@ -3,6 +3,7 @@ import { Uris } from "../../base";
 import { ResourceResolver } from "../../base";
 
 import { TilesetSource } from "../tilesetData/TilesetSource";
+import { TilesetSourceHttp } from "./TilesetSourceHttp";
 
 /**
  * Implementation of a `ResourceResolver` based on a `TilesetSource`
@@ -44,7 +45,12 @@ export class TilesetSourceResourceResolver implements ResourceResolver {
       return null;
     }
     const localUri = Paths.join(this._basePath, uri);
-    const value = this._tilesetSource.getValue(localUri);
+    let value;
+    if (this._tilesetSource instanceof TilesetSourceHttp) {
+      value = await this._tilesetSource.getAsyncValue(localUri);
+    } else {
+      value = this._tilesetSource.getValue(localUri);
+    }
     if (!value) {
       return null;
     }

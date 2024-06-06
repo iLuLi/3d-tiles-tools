@@ -11,6 +11,7 @@ import { TilesetSource } from "./TilesetSource";
 import { TilesetSourceFs } from "./TilesetSourceFs";
 
 import { Loggers } from "../../base";
+import { TilesetSourceHttp } from "./TilesetSourceHttp";
 const logger = Loggers.get("tilesetData");
 
 /**
@@ -34,7 +35,9 @@ export class TilesetSources {
    */
   static createAndOpen(name: string): TilesetSource {
     let extension = path.extname(name).toLowerCase();
-    if (extension === ".json") {
+    if (/^http/.test(name)) {
+      extension = "http";
+    } else if (extension === ".json") {
       extension = "";
       name = path.dirname(name);
     }
@@ -66,6 +69,9 @@ export class TilesetSources {
     }
     if (extension === "") {
       return new TilesetSourceFs();
+    }
+    if (extension === "http") {
+      return new TilesetSourceHttp();
     }
     logger.error("Unknown tileset source type: " + extension);
     return undefined;

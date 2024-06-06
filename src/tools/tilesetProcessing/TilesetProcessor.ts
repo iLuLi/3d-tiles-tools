@@ -1,7 +1,7 @@
 import { DeveloperError } from "../../base";
 import { ContentDataTypeRegistry } from "../../base";
 
-import { TilesetError } from "../../tilesets";
+import { TilesetError, TilesetSourceHttp } from "../../tilesets";
 import { TilesetEntry } from "../../tilesets";
 
 import { TilesetEntryProcessor } from "./TilesetEntryProcessor";
@@ -237,7 +237,12 @@ export abstract class TilesetProcessor {
     const tilesetSource = context.tilesetSource;
 
     const sourceKey = key;
-    const sourceValue = tilesetSource.getValue(sourceKey);
+    let sourceValue;
+    if (tilesetSource instanceof TilesetSourceHttp) {
+      sourceValue = await tilesetSource.getAsyncValue(sourceKey);
+    } else {
+      sourceValue = tilesetSource.getValue(sourceKey);
+    }
     if (!sourceValue) {
       logger.warn(`No input found for ${sourceKey}`);
       return undefined;

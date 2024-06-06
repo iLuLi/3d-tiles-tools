@@ -31,6 +31,8 @@ export interface TilesetSource {
    */
   getValue(key: string): Buffer | undefined;
 
+  getAsyncValue(key: string): Promise<Buffer | undefined>;
+
   getFullKey(key: string): string;
 
   /**

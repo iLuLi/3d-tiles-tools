@@ -68,6 +68,10 @@ export class TilesetInMemory implements TilesetSource, TilesetTarget {
     return this.dataMap[key];
   }
 
+  getAsyncValue(key: string): Promise<Buffer | undefined> {
+    throw new Error("Method not implemented.");
+  }
+
   /** {@inheritDoc TilesetSource.close} */
   close() {
     if (!this.sourceIsOpen) {

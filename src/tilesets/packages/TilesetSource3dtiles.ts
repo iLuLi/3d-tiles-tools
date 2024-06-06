@@ -27,6 +27,7 @@ export class TilesetSource3dtiles implements TilesetSource {
   constructor() {
     this.db = undefined;
   }
+ 
   getFullKey(key: string): string {
     return key;
   }
@@ -83,6 +84,10 @@ export class TilesetSource3dtiles implements TilesetSource {
       return row.content;
     }
     return undefined;
+  }
+
+  getAsyncValue(key: string): Promise<Buffer | undefined> {
+    throw new Error("Method not implemented.");
   }
 
   /** {@inheritDoc TilesetSource.close} */

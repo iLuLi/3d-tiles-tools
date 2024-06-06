@@ -25,6 +25,7 @@ export * from "./io/FileResourceResolver";
 export * from "./io/ResourceResolver";
 export * from "./io/ResourceResolvers";
 export * from "./io/UnzippingResourceResolver";
+export * from "./io/HttpResourceResolver";
 
 export * from "./logging/Loggers";
 

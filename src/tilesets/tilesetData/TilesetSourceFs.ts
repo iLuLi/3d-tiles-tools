@@ -25,7 +25,7 @@ export class TilesetSourceFs implements TilesetSource {
   constructor() {
     this.fullInputName = undefined;
   }
-
+  
   /** {@inheritDoc TilesetSource.open} */
   open(fullInputName: string) {
     if (this.fullInputName) {
@@ -61,6 +61,10 @@ export class TilesetSourceFs implements TilesetSource {
       return undefined;
     }
     return data;
+  }
+
+  getAsyncValue(key: string): Promise<Buffer | undefined> {
+    throw new Error("Method not implemented.");
   }
 
   getFullKey(key: string) {
