@@ -6,8 +6,7 @@ import { BasicTilesetProcessor, GltfUtilities } from "../tools";
 
 const tilesetDir = "D:\\test111";
 // const tilesetSource = "http://10.32.216.67:8082/hcity/HCity.hcx/ecp/longfenglu/yh3lp53rwg6phpowge_6.hcd/1_9_0.json";
-const tilesetSource =
-  "http://10.32.216.67:8082/hcity/HCity.hcx/ecp/longfenglu/yh3lp53rwg6phpowge_6.hcd/1_14_0.json";
+const tilesetSource = "http://10.32.216.67:8082/hcity/HCity.hcx/ecp/longfenglu/yh3lp53rwg6phpowge_6.hcd/1_14_0.json";
 const tilesetTarget = Paths.join(tilesetDir, path.basename(tilesetSource));
 
 async function processEntryUnchecked(
@@ -39,7 +38,7 @@ async function processEntryB3dm(sourceEntry: TilesetEntry): Promise<string[]> {
   const inputTileData = TileFormats.readTileData(sourceValue);
   const inputGlb = inputTileData.payload;
 
-  return processGlbImage(inputGlb, sourceKey);
+  return processGlbImage(inputGlb, path.dirname(sourceKey));
 }
 
 async function processEntryI3dm(
@@ -50,15 +49,15 @@ async function processEntryI3dm(
   const sourceValue = sourceEntry.value;
   const inputTileData = TileFormats.readTileData(sourceValue);
   if (inputTileData.header.gltfFormat === 1) {
-    return processGlbImage(inputTileData.payload, sourceKey);
+    return processGlbImage(inputTileData.payload, path.dirname(sourceKey));
   }
   let glbUrl = inputTileData.payload.toString();
-  glbUrl = Paths.join(sourceKey, glbUrl);
+  glbUrl = Paths.join(path.dirname(sourceKey), glbUrl);
   const glb = await tilesetSource.getAsyncValue(glbUrl);
   let result: string[] = [];
   result.push(glbUrl);
   if (glb) {
-    result = result.concat(processGlbImage(glb, glbUrl));
+    result = result.concat(processGlbImage(glb, path.dirname(glbUrl)));
   }
   return result;
 }
