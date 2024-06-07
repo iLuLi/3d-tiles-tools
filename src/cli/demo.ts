@@ -3,11 +3,13 @@ import { ContentDataTypes, Paths } from "../base";
 import { Tileset } from "../structure";
 import { TileFormats, TilesetEntry, TilesetSource } from "../tilesets";
 import { BasicTilesetProcessor, GltfUtilities } from "../tools";
+import { Resource } from 'cesium';
 
 const tilesetDir = "D:\\test111";
+const layerUrl = "http://10.32.216.67:8082/hcity/ecp.hcx/layers/prjlayers/longfenglu/17/";
 // const tilesetSource = "http://10.32.216.67:8082/hcity/HCity.hcx/ecp/longfenglu/yh3lp53rwg6phpowge_6.hcd/1_9_0.json";
-const tilesetSource = "http://10.32.216.67:8082/hcity/HCity.hcx/ecp/longfenglu/yh3lp53rwg6phpowge_6.hcd/1_14_0.json";
-const tilesetTarget = Paths.join(tilesetDir, path.basename(tilesetSource));
+// const tilesetSource = "http://10.32.216.67:8082/hcity/HCity.hcx/ecp/longfenglu/yh3lp53rwg6phpowge_6.hcd/1_14_0.json";
+// const tilesetTarget = Paths.join(tilesetDir, path.basename(tilesetSource));
 
 async function processEntryUnchecked(
   sourceEntry: TilesetEntry,
@@ -82,7 +84,7 @@ function processGlbImage(glb: Buffer, basePath: string): string[] {
   }
 }
 
-async function main() {
+async function fetchTileset(tilesetSource: string, tilesetTarget: string) {
   const tilesetProcessor = new BasicTilesetProcessor(true);
   await tilesetProcessor.begin(tilesetSource, tilesetTarget, true);
 
@@ -125,4 +127,40 @@ async function main() {
   await tilesetProcessor.end();
 }
 
+function trasvalLayer(
+    children,
+    urls: string[],
+) {
+    children.forEach(item => {
+        if (item.uri && item.uri.indexOf('/mds/') === -1) {
+            urls.push(item.uri);
+        }
+        const subItems = item.layers;
+        if (subItems) {
+            trasvalLayer(subItems, urls);
+        }
+    });
+}
+
+async function main() {
+    const layers = await Resource.fetchJson({
+        url: layerUrl
+    })?.then(data => {
+        const layers: string[] = [];
+        trasvalLayer(data.layers, layers);
+        return layers;
+    });
+    if (!layers) return;
+    for(let i = 0;i < layers.length;i++) {
+        const tilesetSource = layers[i];
+        const arr = tilesetSource.match(/([a-z0-9_]+)\.hcd/);
+        const dirName = arr ? arr[1] : '';
+        const tilesetTarget = Paths.join(tilesetDir, dirName, path.basename(tilesetSource));
+        console.log(tilesetTarget);
+        await fetchTileset(tilesetSource, tilesetTarget);
+    }
+}
+
 main();
+
+
